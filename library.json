@@ -1,0 +1,16 @@
+{
+  "name": "MackerelClient",
+  "description": "Mackerel client for Aruduino.",
+  "keywords": "Mackerel",
+  "authors": {
+    "name": "koudenpa",
+    "url": "https://koudenpa.hatenablog.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/7474/MackerelClient.git"
+  },
+  "version": "0.0.1",
+  "framework": "arduino",
+  "platforms": "espressif32"
+}
