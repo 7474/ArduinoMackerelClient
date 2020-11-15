@@ -72,10 +72,10 @@ private:
 
     time_t getEpoch();
 
-    MackerelStr get(MackerelStr path);
-    MackerelStr post(MackerelStr path, JsonDocument &body);
+    int get(MackerelStr path, JsonDocument &response);
+    int post(MackerelStr path, JsonDocument &body, JsonDocument &response);
     int openRequest(MackerelStr method, MackerelStr path);
-    MackerelStr receiveResponse();
+    int receiveResponse(JsonDocument &response);
 };
 
 #endif

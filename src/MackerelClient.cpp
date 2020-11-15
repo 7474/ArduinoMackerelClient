@@ -1,6 +1,7 @@
 #include "MackerelClient.h"
 
-#include <WiFiClientSecure.h>
+// https://github.com/bblanchon/ArduinoStreamUtils
+#include <StreamUtils.h>
 #include <time.h>
 
 // XXX hostによって異なるだろうから固定だとまずそう。
@@ -96,7 +97,8 @@ int MackerelClient::postHostMetrics()
                 metricObj["value"] = metric.value;
         }
 
-        post("/api/v0/tsdb", doc);
+        DynamicJsonDocument response(128);
+        post("/api/v0/tsdb", doc, response);
 
         hostMetricsPool.clear();
         return 0;
@@ -138,7 +140,8 @@ int MackerelClient::postServiceMetrics(MackerelStr serviceName)
 
         char path[128];
         sprintf(path, "/api/v0/services/%s/tsdb", serviceName);
-        post(path, doc);
+        DynamicJsonDocument response(128);
+        post(path, doc, response);
 
         serviceMetricsPool.clear();
         return 0;
@@ -150,13 +153,13 @@ time_t MackerelClient::getEpoch()
         return time(NULL);
 }
 
-MackerelStr MackerelClient::get(MackerelStr path)
+int MackerelClient::get(MackerelStr path, JsonDocument &response)
 {
         openRequest("GET", path);
         client.println("Connection: close");
         client.println();
 
-        return receiveResponse();
+        return receiveResponse(response);
 }
 
 struct NullWriter
@@ -170,7 +173,8 @@ struct NullWriter
                 return n;
         }
 };
-MackerelStr MackerelClient::post(MackerelStr path, JsonDocument &body)
+
+int MackerelClient::post(MackerelStr path, JsonDocument &body, JsonDocument &response)
 {
         // TODO sizeの取り方。。。
         // NullWriter nullWriter;
@@ -185,8 +189,9 @@ MackerelStr MackerelClient::post(MackerelStr path, JsonDocument &body)
         client.println();
         serializeJson(body, client);
 
-        return receiveResponse();
+        return receiveResponse(response);
 }
+
 int MackerelClient::openRequest(MackerelStr method, MackerelStr path)
 {
         Serial.println("\nStarting connection to server...");
@@ -210,7 +215,7 @@ int MackerelClient::openRequest(MackerelStr method, MackerelStr path)
         return 0;
 }
 
-MackerelStr MackerelClient::receiveResponse()
+int MackerelClient::receiveResponse(JsonDocument &response)
 {
         while (client.connected())
         {
@@ -222,16 +227,13 @@ MackerelStr MackerelClient::receiveResponse()
                         break;
                 }
         }
-        // if there are incoming bytes available
-        // from the server, read them and print them:
         while (client.available())
         {
-                char c = client.read();
-                Serial.write(c);
+                ReadLoggingStream loggingStream(client, Serial);
+                deserializeJson(response, loggingStream);
         }
         client.stop();
         Serial.println("\nbody received");
 
-        // TODO
-        return "";
+        return 0;
 }
