@@ -50,10 +50,25 @@ MackerelClient::~MackerelClient()
 {
 }
 
-MackerelStr MackerelClient::initializeHost(MackerelStr name)
+int MackerelClient::registerHost(MackerelStr name, char* registeredHostId)
 {
-        // TODO implement.
-        return NULL;
+        // https://mackerel.io/ja/api-docs/entry/hosts#create
+        DynamicJsonDocument doc(1024);
+        doc["name"] = name;
+        // TODO metaの要素を引数で追加指定できるようにする。
+        // TODO metaを含めてホスト情報を更新できるようにする。
+        JsonObject metaObj = doc.createNestedObject("meta");
+        metaObj["agent-name"] = "ArduinoMackerelClient";
+        metaObj["agent-version"] = MACKERELCLIENT_VERSION;
+
+        DynamicJsonDocument response(128);
+        if (post("/api/v0/hosts", doc, response))
+        {
+                return -1;
+        }
+
+        strcpy(registeredHostId, response["id"]);
+        return 0;
 }
 
 void MackerelClient::setHostId(MackerelStr hostId)
@@ -85,7 +100,8 @@ int MackerelClient::postHostMetrics()
                 return 0;
         }
 
-        DynamicJsonDocument doc(1024 * 5);
+        // https://mackerel.io/ja/api-docs/entry/host-metrics#post
+        DynamicJsonDocument doc(1024);
 
         JsonArray data = doc.to<JsonArray>();
         for (MackerelHostMetric &metric : hostMetricsPool)
@@ -127,7 +143,8 @@ int MackerelClient::postServiceMetrics(MackerelStr serviceName)
                 return 0;
         }
 
-        DynamicJsonDocument doc(1024 * 5);
+        // https://mackerel.io/ja/api-docs/entry/service-metrics#post
+        DynamicJsonDocument doc(1024);
 
         JsonArray data = doc.to<JsonArray>();
         for (MackerelServiceMetric &metric : serviceMetricsPool)
@@ -153,6 +170,7 @@ time_t MackerelClient::getEpoch()
         return time(NULL);
 }
 
+// TODO この辺はJSONのRESTクライアントとして切り出せそう。
 int MackerelClient::get(MackerelStr path, JsonDocument &response)
 {
         openRequest("GET", path);

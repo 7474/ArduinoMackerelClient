@@ -8,6 +8,8 @@
 // https://github.com/janelia-arduino/Vector
 #include <Vector.h>
 
+#define MACKERELCLIENT_VERSION "0.0.1"
+
 typedef const char *MackerelStr;
 
 typedef struct _MackerelHostMetric
@@ -45,10 +47,10 @@ public:
     ~MackerelClient();
 
     /*!
-    * https://mackerel.io/ja/api-docs/entry/hosts#create
-    * @return HostId
+    * @param registeredHostId The hostId is 11 digits. 
+    * Must be at least 12 lengths including the terminating character.
     */
-    MackerelStr initializeHost(MackerelStr name);
+    int registerHost(MackerelStr name, char* registeredHostId);
     void setHostId(MackerelStr hostId);
 
     /*!
