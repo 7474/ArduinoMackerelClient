@@ -49,13 +49,57 @@ MackerelClient::~MackerelClient()
 {
 }
 
+MackerelStr MackerelClient::initializeHost(MackerelStr name)
+{
+        // TODO implement.
+        return NULL;
+}
+
+void MackerelClient::setHostId(MackerelStr hostId)
+{
+        strcpy(this->hostId, hostId);
+}
+
 int MackerelClient::addHostMetric(MackerelStr name, float value)
 {
-        return -1;
+        if (hostMetricsPool.full())
+        {
+                return -1;
+        }
+
+        MackerelHostMetric metric;
+        metric.hostId = hostId;
+        metric.time = getEpoch();
+        metric.name = name;
+        metric.value = value;
+
+        hostMetricsPool.push_back(metric);
+        return 0;
 }
+
 int MackerelClient::postHostMetrics()
 {
-        return -1;
+        if (hostMetricsPool.empty())
+        {
+                return 0;
+        }
+
+        DynamicJsonDocument doc(1024 * 5);
+
+        JsonArray data = doc.to<JsonArray>();
+        for (MackerelHostMetric &metric : hostMetricsPool)
+        {
+                JsonObject metricObj = data.createNestedObject();
+                metricObj["hostId"] = metric.hostId;
+                metricObj["name"] = metric.name;
+                metricObj["time"] = metric.time;
+                metricObj["value"] = metric.value;
+        }
+
+        post("/api/v0/tsdb", doc);
+
+        hostMetricsPool.clear();
+        return 0;
 }
 
 int MackerelClient::addServiceMetric(MackerelStr name, float value)
@@ -76,7 +120,6 @@ int MackerelClient::addServiceMetric(MackerelStr name, float value)
 
 int MackerelClient::postServiceMetrics(MackerelStr serviceName)
 {
-        // get("/api/v0/services");
         if (serviceMetricsPool.empty())
         {
                 return 0;

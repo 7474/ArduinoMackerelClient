@@ -51,6 +51,10 @@ public:
     MackerelStr initializeHost(MackerelStr name);
     void setHostId(MackerelStr hostId);
 
+    /*!
+    * @param name The specified value is applied as it is. 
+    * Include the `custom` prefix for custom metrics.
+    */
     int addHostMetric(MackerelStr name, float value);
     int postHostMetrics();
 
@@ -62,6 +66,7 @@ private:
     MackerelStr apiKey;
     WiFiClientSecure client;
 
+    char hostId[32];
     Vector<MackerelHostMetric> hostMetricsPool;
     Vector<MackerelServiceMetric> serviceMetricsPool;
 
