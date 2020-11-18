@@ -173,7 +173,10 @@ time_t MackerelClient::getEpoch()
 // TODO この辺はJSONのRESTクライアントとして切り出せそう。
 int MackerelClient::get(MackerelStr path, JsonDocument &response)
 {
-        openRequest("GET", path);
+        if (openRequest("GET", path) != 0)
+        {
+                return -1;
+        }
         client.println("Connection: close");
         client.println();
 
@@ -199,7 +202,10 @@ int MackerelClient::post(MackerelStr path, JsonDocument &body, JsonDocument &res
         // size_t bodyLength = serializeJson(body, nullWriter);
         size_t bodyLength = serializeJson(body, Serial);
 
-        openRequest("POST", path);
+        if (openRequest("POST", path) != 0)
+        {
+                return -1;
+        }
         client.println("Content-Type: application/json");
         client.print("Content-Length: ");
         client.println(bodyLength);
@@ -245,12 +251,14 @@ int MackerelClient::receiveResponse(JsonDocument &response)
                         break;
                 }
         }
-        while (client.available())
-        {
-                ReadLoggingStream loggingStream(client, Serial);
-                deserializeJson(response, loggingStream);
-        }
+        ReadLoggingStream loggingStream(client, Serial);
+        DeserializationError error = deserializeJson(response, loggingStream);
         client.stop();
+        if (error)
+        {
+                Serial.println(error.c_str());
+                return -1;
+        }
         Serial.println("\nbody received");
 
         return 0;
